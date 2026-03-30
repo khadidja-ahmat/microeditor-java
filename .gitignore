@@ -1,0 +1,8 @@
+out/
+target/
+bin/
+build/
+.idea/
+.vscode/
+*.class
+*.log
