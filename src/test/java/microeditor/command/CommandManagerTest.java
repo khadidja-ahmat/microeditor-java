@@ -6,6 +6,7 @@ import microeditor.model.FigureState;
 import microeditor.model.GroupFigure;
 import microeditor.model.PolygonFigure;
 import microeditor.model.RectangleFigure;
+import microeditor.model.Toolbar;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -145,5 +146,48 @@ class CommandManagerTest {
 
         assertEquals(List.of(group), document.getFigures());
         assertEquals(List.of(rectangle, polygon), group.getChildren());
+    }
+
+    @Test
+    void addToolbarFigureCanBeUndoneAndRedone() {
+        Toolbar toolbar = new Toolbar();
+        Figure rectangle = new RectangleFigure("rectangle-1", 0, 0, 100, 50, "#000000");
+        CommandManager manager = new CommandManager();
+
+        manager.executeCommand(new AddToolbarFigureCommand(toolbar, rectangle));
+        rectangle.move(20, 15);
+
+        assertEquals(1, toolbar.getFigures().size());
+        assertEquals(0, toolbar.getFigures().get(0).getTranslateX());
+        assertEquals(0, toolbar.getFigures().get(0).getTranslateY());
+
+        manager.undo();
+
+        assertTrue(toolbar.getFigures().isEmpty());
+
+        manager.redo();
+
+        assertEquals(1, toolbar.getFigures().size());
+    }
+
+    @Test
+    void removeToolbarFigureCanBeUndoneAtSameIndex() {
+        Toolbar toolbar = new Toolbar();
+        Figure first = new RectangleFigure("rectangle-1", 0, 0, 100, 50, "#000000");
+        Figure second = new PolygonFigure("polygon-1", 40, 40, 5, 30, "#111111");
+        CommandManager manager = new CommandManager();
+        toolbar.addFigure(first);
+        toolbar.addFigure(second);
+
+        manager.executeCommand(new RemoveToolbarFigureCommand(toolbar, 0));
+
+        assertEquals(1, toolbar.getFigures().size());
+        assertEquals("polygon-1", toolbar.getFigures().get(0).getId());
+
+        manager.undo();
+
+        assertEquals(2, toolbar.getFigures().size());
+        assertEquals("rectangle-1", toolbar.getFigures().get(0).getId());
+        assertEquals("polygon-1", toolbar.getFigures().get(1).getId());
     }
 }

@@ -1,7 +1,10 @@
 package microeditor.ui;
 
+import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
@@ -15,11 +18,17 @@ import microeditor.model.RectangleFigure;
 import java.util.Optional;
 
 public final class FigureEditDialog {
+    private static final ButtonType APPLY_BUTTON = new ButtonType("Appliquer", ButtonBar.ButtonData.APPLY);
+
     private FigureEditDialog() {
     }
 
     public static Optional<FigureState> show(Figure figure) {
-        Dialog<Boolean> dialog = createDialog(figure);
+        return show(figure, () -> { });
+    }
+
+    public static Optional<FigureState> show(Figure figure, Runnable applyAction) {
+        Dialog<Boolean> dialog = createDialog(figure, applyAction);
         Optional<Boolean> result = dialog.showAndWait();
         if (result.orElse(false)) {
             return Optional.of(figure.saveState());
@@ -27,10 +36,10 @@ public final class FigureEditDialog {
         return Optional.empty();
     }
 
-    private static Dialog<Boolean> createDialog(Figure figure) {
+    private static Dialog<Boolean> createDialog(Figure figure, Runnable applyAction) {
         Dialog<Boolean> dialog = new Dialog<>();
         dialog.setTitle("Edit figure");
-        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        dialog.getDialogPane().getButtonTypes().addAll(APPLY_BUTTON, ButtonType.OK, ButtonType.CANCEL);
 
         GridPane formGrid = new GridPane();
         formGrid.setHgap(8);
@@ -70,22 +79,58 @@ public final class FigureEditDialog {
         TextField finalSideLengthField = sideLengthField;
 
         dialog.getDialogPane().setContent(formGrid);
-        dialog.setResultConverter(buttonType -> {
-            if (buttonType != ButtonType.OK) {
-                return false;
+        Button applyButton = (Button) dialog.getDialogPane().lookupButton(APPLY_BUTTON);
+        applyButton.addEventFilter(ActionEvent.ACTION, event -> {
+            if (applyFields(figure, xField, yField, rotationField, centerXField, centerYField,
+                    translateXField, translateYField, colorField, finalWidthField, finalHeightField,
+                    finalCornerRadiusField, finalSideCountField, finalSideLengthField)) {
+                applyAction.run();
             }
-            try {
-                applyCommonFields(figure, xField, yField, rotationField,
-                        centerXField, centerYField, translateXField, translateYField, colorField);
-                applySpecificFields(figure, finalWidthField, finalHeightField,
-                        finalCornerRadiusField, finalSideCountField, finalSideLengthField);
-                return true;
-            } catch (IllegalArgumentException exception) {
-                showInvalidValueAlert(exception);
-                return false;
+            event.consume();
+        });
+
+        Button okButton = (Button) dialog.getDialogPane().lookupButton(ButtonType.OK);
+        okButton.addEventFilter(ActionEvent.ACTION, event -> {
+            if (!applyFields(figure, xField, yField, rotationField, centerXField, centerYField,
+                    translateXField, translateYField, colorField, finalWidthField, finalHeightField,
+                    finalCornerRadiusField, finalSideCountField, finalSideLengthField)) {
+                event.consume();
             }
         });
+
+        dialog.setResultConverter(buttonType -> {
+            return buttonType == ButtonType.OK;
+        });
         return dialog;
+    }
+
+    private static boolean applyFields(
+            Figure figure,
+            TextField xField,
+            TextField yField,
+            TextField rotationField,
+            TextField centerXField,
+            TextField centerYField,
+            TextField translateXField,
+            TextField translateYField,
+            TextField colorField,
+            TextField widthField,
+            TextField heightField,
+            TextField cornerRadiusField,
+            TextField sideCountField,
+            TextField sideLengthField) {
+        FigureState stateBeforeApply = figure.saveState();
+        try {
+            applyCommonFields(figure, xField, yField, rotationField,
+                    centerXField, centerYField, translateXField, translateYField, colorField);
+            applySpecificFields(figure, widthField, heightField,
+                    cornerRadiusField, sideCountField, sideLengthField);
+            return true;
+        } catch (IllegalArgumentException exception) {
+            figure.restoreState(stateBeforeApply);
+            showInvalidValueAlert(exception);
+            return false;
+        }
     }
 
     private static TextField addDoubleField(GridPane formGrid, String label, double value, int row) {

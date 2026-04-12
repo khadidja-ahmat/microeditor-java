@@ -15,11 +15,13 @@ import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import microeditor.command.AddFigureCommand;
+import microeditor.command.AddToolbarFigureCommand;
 import microeditor.command.ChangeColorCommand;
 import microeditor.command.CommandManager;
 import microeditor.command.GroupFiguresCommand;
 import microeditor.command.MoveFigureCommand;
 import microeditor.command.RemoveFigureCommand;
+import microeditor.command.RemoveToolbarFigureCommand;
 import microeditor.command.EditFigureCommand;
 import microeditor.command.UngroupFigureCommand;
 import microeditor.factory.FigureFactory;
@@ -34,12 +36,16 @@ import microeditor.persistence.PersistenceService;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 public final class MicroEditorApp extends Application {
     private static final String PROJECT_EXTENSION = "*.microeditor";
+    private static final Path TOOLBAR_STATE_PATH = Path.of(
+            System.getProperty("user.home"), ".microeditor-toolbar.microeditor");
 
     private final FigureFactory figureFactory = new FigureFactory();
     private final PersistenceService persistenceService = new PersistenceService();
@@ -49,6 +55,7 @@ public final class MicroEditorApp extends Application {
     private DrawingDocument drawingDocument = new DrawingDocument();
     private Toolbar toolbarModel = new Toolbar();
     private WhiteboardView whiteboardView;
+    private ToolPaletteView toolPaletteView;
     private Stage mainStage;
     private ColorPicker colorPicker;
 
@@ -59,18 +66,22 @@ public final class MicroEditorApp extends Application {
     @Override
     public void start(Stage stage) {
         mainStage = stage;
+        loadToolbarState();
         seedToolbarModel();
         createWhiteboardView();
         registerDocumentObserver();
 
         BorderPane rootPane = new BorderPane();
         rootPane.setTop(createTopActionBar());
-        rootPane.setLeft(new ToolPaletteView(this::deleteSelectedFigures).getPane());
+        toolPaletteView = new ToolPaletteView(toolbarModel, this::deleteSelectedFigures, this::removeToolbarFigure);
+        rootPane.setLeft(toolPaletteView.getPane());
         rootPane.setCenter(whiteboardView.getPane());
+        registerToolbarObserver();
 
         Scene scene = new Scene(rootPane, 780, 540);
         stage.setTitle("Micro editor de figures");
         stage.setScene(scene);
+        stage.setOnCloseRequest(event -> saveToolbarState());
         stage.show();
         whiteboardView.render();
     }
@@ -79,6 +90,11 @@ public final class MicroEditorApp extends Application {
         whiteboardView = new WhiteboardView(drawingDocument, selection);
         whiteboardView.setToolDropHandler(this::addFigureFromToolbar);
         whiteboardView.setMoveHandler(this::moveSelectedFigures);
+        whiteboardView.setToolbarDropChecker((screenX, screenY) ->
+                toolPaletteView != null && toolPaletteView.containsScreenPoint(screenX, screenY));
+        whiteboardView.setTrashDropChecker((screenX, screenY) ->
+                toolPaletteView != null && toolPaletteView.trashContainsScreenPoint(screenX, screenY));
+        whiteboardView.setAddSelectionToToolbarAction(this::addSelectionToToolbar);
         whiteboardView.setGroupAction(this::groupSelectedFigures);
         whiteboardView.setUngroupAction(this::ungroupSelectedGroup);
         whiteboardView.setEditAction(this::editSelectedFigure);
@@ -96,12 +112,14 @@ public final class MicroEditorApp extends Application {
         undoButton.setOnAction(event -> {
             commandManager.undo();
             whiteboardView.render();
+            toolPaletteView.render();
         });
 
         Button redoButton = createToolbarIconButton(ToolbarIcons.redoIcon(), "Redo");
         redoButton.setOnAction(event -> {
             commandManager.redo();
             whiteboardView.render();
+            toolPaletteView.render();
         });
 
         Button groupButton = new Button("Group");
@@ -148,13 +166,41 @@ public final class MicroEditorApp extends Application {
     }
 
     private Figure createFigureFromTool(String toolName, double x, double y) {
-        if (ToolPaletteView.RECTANGLE_TOOL.equals(toolName)) {
-            return figureFactory.createRectangle(x, y, 120, 70);
-        }
-        if (ToolPaletteView.POLYGON_TOOL.equals(toolName)) {
-            return figureFactory.createPolygon(x, y, 5, 45);
+        if (toolName.startsWith(ToolPaletteView.TOOL_PREFIX)) {
+            int index = Integer.parseInt(toolName.substring(ToolPaletteView.TOOL_PREFIX.length()));
+            Figure figure = toolbarModel.createFigure(index);
+            figure.setPosition(x, y);
+            return figure;
         }
         return null;
+    }
+
+    private void addSelectionToToolbar() {
+        List<Figure> selectedFigures = List.copyOf(selection.getSelectedFigures());
+        if (selectedFigures.isEmpty()) {
+            return;
+        }
+
+        if (selectedFigures.size() == 1) {
+            commandManager.executeCommand(new AddToolbarFigureCommand(toolbarModel, selectedFigures.get(0)));
+        } else {
+            GroupFigure group = new GroupFigure("toolbar-group-" + UUID.randomUUID());
+            for (Figure selectedFigure : selectedFigures) {
+                group.addFigure(selectedFigure);
+            }
+            commandManager.executeCommand(new AddToolbarFigureCommand(toolbarModel, group));
+        }
+
+        toolPaletteView.render();
+    }
+
+    private void removeToolbarFigure(int index) {
+        if (index < 0 || index >= toolbarModel.getFigures().size()) {
+            return;
+        }
+
+        commandManager.executeCommand(new RemoveToolbarFigureCommand(toolbarModel, index));
+        toolPaletteView.render();
     }
 
     private void moveSelectedFigures(double deltaX, double deltaY) {
@@ -194,7 +240,7 @@ public final class MicroEditorApp extends Application {
         }
 
         FigureState oldState = selectedFigure.saveState();
-        Optional<FigureState> newState = FigureEditDialog.show(selectedFigure);
+        Optional<FigureState> newState = FigureEditDialog.show(selectedFigure, whiteboardView::render);
         if (newState.isPresent()) {
             selectedFigure.restoreState(oldState);
             commandManager.executeCommand(new EditFigureCommand(selectedFigure, oldState, newState.get()));
@@ -254,10 +300,32 @@ public final class MicroEditorApp extends Application {
             selection.clear();
             commandManager.clear();
             whiteboardView.setDocument(drawingDocument);
+            toolPaletteView.setToolbar(toolbarModel);
             registerDocumentObserver();
+            registerToolbarObserver();
             whiteboardView.render();
         } catch (IOException | ClassNotFoundException exception) {
             showError("Load failed", exception);
+        }
+    }
+
+    private void loadToolbarState() {
+        if (!Files.exists(TOOLBAR_STATE_PATH)) {
+            return;
+        }
+
+        try {
+            toolbarModel = persistenceService.load(TOOLBAR_STATE_PATH).getToolbar();
+        } catch (IOException | ClassNotFoundException exception) {
+            showError("Toolbar load failed", exception);
+        }
+    }
+
+    private void saveToolbarState() {
+        try {
+            persistenceService.save(new DrawingDocument(), toolbarModel, TOOLBAR_STATE_PATH);
+        } catch (IOException exception) {
+            showError("Toolbar save failed", exception);
         }
     }
 
@@ -275,6 +343,14 @@ public final class MicroEditorApp extends Application {
 
     private void registerDocumentObserver() {
         drawingDocument.addObserver(event -> whiteboardView.render());
+    }
+
+    private void registerToolbarObserver() {
+        toolbarModel.addObserver(event -> {
+            if (toolPaletteView != null) {
+                toolPaletteView.render();
+            }
+        });
     }
 
     private void seedToolbarModel() {

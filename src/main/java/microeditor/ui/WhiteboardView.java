@@ -31,6 +31,9 @@ public final class WhiteboardView {
     private DrawingDocument document;
     private ToolDropHandler toolDropHandler = (toolName, x, y) -> { };
     private MoveHandler moveHandler = (deltaX, deltaY) -> { };
+    private ToolbarDropChecker toolbarDropChecker = (screenX, screenY) -> false;
+    private ToolbarDropChecker trashDropChecker = (screenX, screenY) -> false;
+    private Runnable addSelectionToToolbarAction = () -> { };
     private Runnable groupAction = () -> { };
     private Runnable ungroupAction = () -> { };
     private Runnable editAction = () -> { };
@@ -58,6 +61,18 @@ public final class WhiteboardView {
 
     public void setMoveHandler(MoveHandler moveHandler) {
         this.moveHandler = Objects.requireNonNull(moveHandler);
+    }
+
+    public void setToolbarDropChecker(ToolbarDropChecker toolbarDropChecker) {
+        this.toolbarDropChecker = Objects.requireNonNull(toolbarDropChecker);
+    }
+
+    public void setTrashDropChecker(ToolbarDropChecker trashDropChecker) {
+        this.trashDropChecker = Objects.requireNonNull(trashDropChecker);
+    }
+
+    public void setAddSelectionToToolbarAction(Runnable addSelectionToToolbarAction) {
+        this.addSelectionToToolbarAction = Objects.requireNonNull(addSelectionToToolbarAction);
     }
 
     public void setGroupAction(Runnable groupAction) {
@@ -189,6 +204,17 @@ public final class WhiteboardView {
 
         figureNode.setOnMouseReleased(event -> {
             if (event.getButton() == MouseButton.PRIMARY && selection.isSelected(figure)) {
+                if (trashDropChecker.isOverToolbar(event.getScreenX(), event.getScreenY())) {
+                    deleteAction.run();
+                    event.consume();
+                    return;
+                }
+                if (toolbarDropChecker.isOverToolbar(event.getScreenX(), event.getScreenY())) {
+                    addSelectionToToolbarAction.run();
+                    render();
+                    event.consume();
+                    return;
+                }
                 double deltaX = event.getSceneX() - mousePressedSceneX;
                 double deltaY = event.getSceneY() - mousePressedSceneY;
                 if (deltaX != 0.0 || deltaY != 0.0) {
@@ -262,5 +288,10 @@ public final class WhiteboardView {
     @FunctionalInterface
     public interface MoveHandler {
         void moveSelectedFigures(double deltaX, double deltaY);
+    }
+
+    @FunctionalInterface
+    public interface ToolbarDropChecker {
+        boolean isOverToolbar(double screenX, double screenY);
     }
 }
