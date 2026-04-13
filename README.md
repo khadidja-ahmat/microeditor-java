@@ -52,6 +52,7 @@ mvn test
 
 - Glisser le rectangle ou le polygone depuis la toolbar gauche vers la feuille blanche.
 - Cliquer sur une figure pour la selectionner.
+- Faire un clic-glisse sur le fond blanc pour selectionner plusieurs figures avec un rectangle de selection.
 - Utiliser `Ctrl + clic` pour selectionner plusieurs figures.
 - Deplacer une figure en gardant le clic appuye.
 - Relacher une figure selectionnee sur la toolbar pour l'ajouter a la toolbar.

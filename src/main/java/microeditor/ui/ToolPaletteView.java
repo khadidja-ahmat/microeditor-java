@@ -5,14 +5,7 @@ import javafx.geometry.Pos;
 import javafx.geometry.Bounds;
 import javafx.scene.Group;
 import javafx.scene.Node;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.MenuItem;
 import javafx.scene.layout.StackPane;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.DragEvent;
-import javafx.scene.input.Dragboard;
-import javafx.scene.input.MouseButton;
-import javafx.scene.input.TransferMode;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -37,13 +30,13 @@ public final class ToolPaletteView {
     private final VBox palettePane;
     private final VBox toolsPane = new VBox(12);
     private final Pane trashPane;
-    private final IntConsumer removeToolAction;
+    private final ToolPaletteDragDrop dragDrop;
     private Toolbar toolbar;
 
     public ToolPaletteView(Toolbar toolbar, Runnable deleteSelectionAction, IntConsumer removeToolAction) {
         this.toolbar = Objects.requireNonNull(toolbar);
         Objects.requireNonNull(deleteSelectionAction);
-        this.removeToolAction = Objects.requireNonNull(removeToolAction);
+        this.dragDrop = new ToolPaletteDragDrop(removeToolAction);
         trashPane = createTrashPane(deleteSelectionAction);
 
         Region emptySpace = new Region();
@@ -81,8 +74,7 @@ public final class ToolPaletteView {
         for (int index = 0; index < toolbar.getFigures().size(); index++) {
             int toolIndex = index;
             Node icon = createFigureIcon(toolbar.getFigures().get(index));
-            installDrag(icon, TOOL_PREFIX + toolIndex);
-            installRemovalMenu(icon, toolIndex);
+            dragDrop.installToolHandlers(icon, toolIndex);
             toolsPane.getChildren().add(icon);
         }
     }
@@ -190,8 +182,7 @@ public final class ToolPaletteView {
         trashPane.setPrefSize(46, 46);
         trashPane.setStyle("-fx-background-color: #eeeeee; -fx-border-color: #777777;");
         trashPane.setOnMouseClicked(event -> deleteSelectionAction.run());
-        trashPane.setOnDragOver(this::acceptToolbarToolDrop);
-        trashPane.setOnDragDropped(this::dropToolbarToolOnTrash);
+        dragDrop.installTrashDrop(trashPane);
 
         Node trashIcon = ToolbarIcons.trashIcon();
         trashIcon.setScaleX(1.15);
@@ -200,52 +191,5 @@ public final class ToolPaletteView {
         trashIcon.setLayoutY(8);
         trashPane.getChildren().add(trashIcon);
         return trashPane;
-    }
-
-    private void installDrag(Node toolIcon, String toolName) {
-        toolIcon.setOnDragDetected(event -> {
-            Dragboard dragboard = toolIcon.startDragAndDrop(TransferMode.COPY_OR_MOVE);
-            ClipboardContent content = new ClipboardContent();
-            content.putString(toolName);
-            dragboard.setContent(content);
-            event.consume();
-        });
-    }
-
-    private void installRemovalMenu(Node toolIcon, int toolIndex) {
-        toolIcon.setOnMouseClicked(event -> {
-            if (event.getButton() == MouseButton.SECONDARY) {
-                MenuItem removeItem = new MenuItem("Remove from toolbar");
-                removeItem.setOnAction(actionEvent -> removeToolAction.accept(toolIndex));
-                new ContextMenu(removeItem).show(toolIcon, event.getScreenX(), event.getScreenY());
-                event.consume();
-            }
-        });
-    }
-
-    private void acceptToolbarToolDrop(DragEvent event) {
-        if (isToolbarToolDrag(event.getDragboard())) {
-            event.acceptTransferModes(TransferMode.MOVE);
-        }
-        event.consume();
-    }
-
-    private void dropToolbarToolOnTrash(DragEvent event) {
-        boolean dropCompleted = false;
-        Dragboard dragboard = event.getDragboard();
-        if (isToolbarToolDrag(dragboard)) {
-            removeToolAction.accept(parseToolIndex(dragboard.getString()));
-            dropCompleted = true;
-        }
-        event.setDropCompleted(dropCompleted);
-        event.consume();
-    }
-
-    private boolean isToolbarToolDrag(Dragboard dragboard) {
-        return dragboard.hasString() && dragboard.getString().startsWith(TOOL_PREFIX);
-    }
-
-    private int parseToolIndex(String toolName) {
-        return Integer.parseInt(toolName.substring(TOOL_PREFIX.length()));
     }
 }
