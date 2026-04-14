@@ -1,5 +1,8 @@
 package microeditor.observer;
 
+/**
+ * Types of model changes that can be sent to observers.
+ */
 public enum ModelChangeType {
     FIGURE_ADDED,
     FIGURE_REMOVED,

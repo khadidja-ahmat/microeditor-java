@@ -13,18 +13,37 @@ import javafx.scene.layout.Pane;
 import java.util.Objects;
 import java.util.function.IntConsumer;
 
+/**
+ * Installs drag-and-drop and removal behavior for toolbar template icons.
+ */
 final class ToolPaletteDragDrop {
     private final IntConsumer removeToolAction;
 
+    /**
+     * Creates drag-and-drop support for the tool palette.
+     *
+     * @param removeToolAction action called with the removed template index
+     */
     ToolPaletteDragDrop(IntConsumer removeToolAction) {
         this.removeToolAction = Objects.requireNonNull(removeToolAction);
     }
 
+    /**
+     * Installs drag and context-menu handlers on a toolbar icon.
+     *
+     * @param toolIcon icon receiving handlers
+     * @param toolIndex toolbar template index
+     */
     void installToolHandlers(Node toolIcon, int toolIndex) {
         installDrag(toolIcon, ToolPaletteView.TOOL_PREFIX + toolIndex);
         installRemovalMenu(toolIcon, toolIndex);
     }
 
+    /**
+     * Installs drop handlers on the trash pane.
+     *
+     * @param trashPane pane receiving dropped templates
+     */
     void installTrashDrop(Pane trashPane) {
         trashPane.setOnDragOver(this::acceptToolbarToolDrop);
         trashPane.setOnDragDropped(this::dropToolbarToolOnTrash);

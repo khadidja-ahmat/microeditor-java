@@ -5,12 +5,21 @@ import microeditor.model.Toolbar;
 
 import java.util.Objects;
 
+/**
+ * Command that adds a copy of a figure to the toolbar templates.
+ */
 public final class AddToolbarFigureCommand implements Command {
     private final Toolbar toolbar;
     private final Figure templateSnapshot;
     private Figure addedTemplate;
     private int addedIndex = -1;
 
+    /**
+     * Creates a toolbar insertion command from a source figure.
+     *
+     * @param toolbar toolbar receiving the template
+     * @param sourceFigure figure copied as a reusable template
+     */
     public AddToolbarFigureCommand(Toolbar toolbar, Figure sourceFigure) {
         this.toolbar = Objects.requireNonNull(toolbar);
         this.templateSnapshot = Objects.requireNonNull(sourceFigure).clone();

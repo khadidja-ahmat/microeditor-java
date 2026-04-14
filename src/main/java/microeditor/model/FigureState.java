@@ -8,10 +8,20 @@ import java.io.Serializable;
 public final class FigureState implements Serializable {
     private final Figure snapshot;
 
+    /**
+     * Captures a defensive copy of a figure.
+     *
+     * @param snapshot figure to snapshot
+     */
     public FigureState(Figure snapshot) {
         this.snapshot = snapshot.clone();
     }
 
+    /**
+     * Returns a defensive copy of the stored snapshot.
+     *
+     * @return cloned snapshot
+     */
     public Figure getSnapshot() {
         return snapshot.clone();
     }

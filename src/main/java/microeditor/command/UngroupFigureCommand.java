@@ -7,12 +7,21 @@ import microeditor.model.GroupFigure;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Command that replaces a group with its child figures.
+ */
 public final class UngroupFigureCommand implements Command {
     private final DrawingDocument document;
     private final GroupFigure group;
     private final List<Figure> children;
     private int groupIndex = -1;
 
+    /**
+     * Creates an ungrouping command for an existing group.
+     *
+     * @param document document containing the group
+     * @param group group to split into child figures
+     */
     public UngroupFigureCommand(DrawingDocument document, GroupFigure group) {
         this.document = Objects.requireNonNull(document);
         this.group = Objects.requireNonNull(group);

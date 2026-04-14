@@ -15,15 +15,30 @@ import microeditor.model.Selection;
 
 import java.util.Objects;
 
+/**
+ * Creates JavaFX nodes that visually represent model figures.
+ */
 final class FigureNodeFactory {
     private final Selection selection;
     private final FigureNodeHandler figureNodeHandler;
 
+    /**
+     * Creates a node factory.
+     *
+     * @param selection shared selection state
+     * @param figureNodeHandler handler installed on interactive nodes
+     */
     FigureNodeFactory(Selection selection, FigureNodeHandler figureNodeHandler) {
         this.selection = Objects.requireNonNull(selection);
         this.figureNodeHandler = Objects.requireNonNull(figureNodeHandler);
     }
 
+    /**
+     * Creates an interactive node for a figure.
+     *
+     * @param figure figure to render
+     * @return JavaFX node representing the figure
+     */
     Node createFigureNode(Figure figure) {
         return createFigureNode(figure, true, false);
     }
@@ -97,8 +112,17 @@ final class FigureNodeFactory {
                 figure.getRotationCenterY()));
     }
 
+    /**
+     * Installs behavior on a rendered figure node.
+     */
     @FunctionalInterface
     interface FigureNodeHandler {
+        /**
+         * Installs handlers on a node.
+         *
+         * @param node rendered JavaFX node
+         * @param figure represented figure
+         */
         void install(Node node, Figure figure);
     }
 }

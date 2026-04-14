@@ -9,6 +9,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Command that replaces several document figures with a single group.
+ */
 public final class GroupFiguresCommand implements Command {
     private final DrawingDocument document;
     private final GroupFigure group;
@@ -16,6 +19,13 @@ public final class GroupFiguresCommand implements Command {
     private final List<FigureWithIndex> originalFigures = new ArrayList<>();
     private int groupIndex = -1;
 
+    /**
+     * Creates a grouping command.
+     *
+     * @param document document containing the figures
+     * @param group group that will receive the figures
+     * @param figures figures to group, in document order or selection order
+     */
     public GroupFiguresCommand(DrawingDocument document, GroupFigure group, List<Figure> figures) {
         this.document = Objects.requireNonNull(document);
         this.group = Objects.requireNonNull(group);

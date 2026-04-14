@@ -8,6 +8,9 @@ import microeditor.model.Selection;
 
 import java.util.Objects;
 
+/**
+ * Installs drag-and-drop behavior for the whiteboard area.
+ */
 final class WhiteboardDragDrop {
     private final Selection selection;
     private final Runnable renderAction;
@@ -19,11 +22,22 @@ final class WhiteboardDragDrop {
     private Runnable addSelectionToToolbarAction = () -> { };
     private Runnable deleteAction = () -> { };
 
+    /**
+     * Creates drag-and-drop support for whiteboard interactions.
+     *
+     * @param selection shared selection state
+     * @param renderAction action used to refresh the whiteboard
+     */
     WhiteboardDragDrop(Selection selection, Runnable renderAction) {
         this.selection = Objects.requireNonNull(selection);
         this.renderAction = Objects.requireNonNull(renderAction);
     }
 
+    /**
+     * Installs whiteboard drag handlers on a pane.
+     *
+     * @param whiteboardPane pane receiving drag events
+     */
     void installOn(Pane whiteboardPane) {
         whiteboardPane.setOnDragOver(this::acceptToolbarDrag);
         whiteboardPane.setOnDragDropped(this::dropToolOnWhiteboard);
@@ -53,6 +67,9 @@ final class WhiteboardDragDrop {
         this.deleteAction = Objects.requireNonNull(deleteAction);
     }
 
+    /**
+     * Completes a figure drag and routes it to move, toolbar or trash behavior.
+     */
     void finishFigureDrag(
             Figure figure,
             double screenX,

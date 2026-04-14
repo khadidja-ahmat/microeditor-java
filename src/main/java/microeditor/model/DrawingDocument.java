@@ -18,6 +18,11 @@ public final class DrawingDocument implements Serializable, ObservableModel {
     private transient ObservableSupport observableSupport = new ObservableSupport(this);
     private final List<Figure> figures = new ArrayList<>();
 
+    /**
+     * Adds a figure to the end of the document.
+     *
+     * @param figure figure to add
+     */
     public void addFigure(Figure figure) {
         if (!figures.contains(figure)) {
             figures.add(figure);
@@ -25,6 +30,12 @@ public final class DrawingDocument implements Serializable, ObservableModel {
         }
     }
 
+    /**
+     * Adds a figure at the requested index, clamped to the document bounds.
+     *
+     * @param index desired insertion index
+     * @param figure figure to add
+     */
     public void addFigure(int index, Figure figure) {
         if (!figures.contains(figure)) {
             int insertionIndex = Math.max(0, Math.min(index, figures.size()));
@@ -33,12 +44,20 @@ public final class DrawingDocument implements Serializable, ObservableModel {
         }
     }
 
+    /**
+     * Removes a figure from the document.
+     *
+     * @param figure figure to remove
+     */
     public void removeFigure(Figure figure) {
         if (figures.remove(figure)) {
             notifyObservers(ModelChangeType.FIGURE_REMOVED, figure);
         }
     }
 
+    /**
+     * Removes every figure from the document.
+     */
     public void clear() {
         if (!figures.isEmpty()) {
             figures.clear();
@@ -46,10 +65,21 @@ public final class DrawingDocument implements Serializable, ObservableModel {
         }
     }
 
+    /**
+     * Returns the document figures in drawing order.
+     *
+     * @return unmodifiable list of figures
+     */
     public List<Figure> getFigures() {
         return Collections.unmodifiableList(figures);
     }
 
+    /**
+     * Returns the index of a figure in the drawing order.
+     *
+     * @param figure searched figure
+     * @return index of the figure, or {@code -1} when absent
+     */
     public int indexOf(Figure figure) {
         return figures.indexOf(figure);
     }

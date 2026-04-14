@@ -18,18 +18,31 @@ public final class Selection implements Serializable, ObservableModel {
     private transient ObservableSupport observableSupport = new ObservableSupport(this);
     private final Set<Figure> selectedFigures = new LinkedHashSet<>();
 
+    /**
+     * Adds a figure to the current selection.
+     *
+     * @param figure figure to select
+     */
     public void select(Figure figure) {
         if (selectedFigures.add(figure)) {
             notifySelectionChanged(figure);
         }
     }
 
+    /**
+     * Removes a figure from the current selection.
+     *
+     * @param figure figure to unselect
+     */
     public void unselect(Figure figure) {
         if (selectedFigures.remove(figure)) {
             notifySelectionChanged(figure);
         }
     }
 
+    /**
+     * Clears the current selection.
+     */
     public void clear() {
         if (!selectedFigures.isEmpty()) {
             selectedFigures.clear();
@@ -37,10 +50,21 @@ public final class Selection implements Serializable, ObservableModel {
         }
     }
 
+    /**
+     * Checks whether a figure is selected.
+     *
+     * @param figure tested figure
+     * @return {@code true} when the figure is selected
+     */
     public boolean isSelected(Figure figure) {
         return selectedFigures.contains(figure);
     }
 
+    /**
+     * Returns selected figures in selection order.
+     *
+     * @return unmodifiable set of selected figures
+     */
     public Set<Figure> getSelectedFigures() {
         return Collections.unmodifiableSet(selectedFigures);
     }

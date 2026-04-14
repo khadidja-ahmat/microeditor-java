@@ -18,6 +18,9 @@ import microeditor.persistence.ToolbarStateStore;
 import java.io.File;
 import java.io.IOException;
 
+/**
+ * JavaFX entry point that wires the editor model, commands, views and persistence.
+ */
 public final class MicroEditorApp extends Application {
     private static final String PROJECT_EXTENSION = "*.microeditor";
 
@@ -34,10 +37,20 @@ public final class MicroEditorApp extends Application {
     private ActionBarView actionBarView;
     private Stage mainStage;
 
+    /**
+     * Launches the JavaFX application.
+     *
+     * @param args command-line arguments
+     */
     public static void main(String[] args) {
         launch(args);
     }
 
+    /**
+     * Builds and displays the main editor window.
+     *
+     * @param stage primary JavaFX stage
+     */
     @Override
     public void start(Stage stage) {
         mainStage = stage;

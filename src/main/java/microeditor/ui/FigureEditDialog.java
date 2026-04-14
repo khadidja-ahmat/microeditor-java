@@ -17,16 +17,32 @@ import microeditor.model.RectangleFigure;
 
 import java.util.Optional;
 
+/**
+ * Modal dialog used to edit the properties of a selected figure.
+ */
 public final class FigureEditDialog {
     private static final ButtonType APPLY_BUTTON = new ButtonType("Appliquer", ButtonBar.ButtonData.APPLY);
 
     private FigureEditDialog() {
     }
 
+    /**
+     * Opens the edit dialog without an intermediate apply callback.
+     *
+     * @param figure figure to edit
+     * @return new figure state when the user confirms the dialog
+     */
     public static Optional<FigureState> show(Figure figure) {
         return show(figure, () -> { });
     }
 
+    /**
+     * Opens the edit dialog and invokes an action after each successful apply.
+     *
+     * @param figure figure to edit
+     * @param applyAction action executed after applying valid field values
+     * @return new figure state when the user confirms the dialog
+     */
     public static Optional<FigureState> show(Figure figure, Runnable applyAction) {
         Dialog<Boolean> dialog = createDialog(figure, applyAction);
         Optional<Boolean> result = dialog.showAndWait();

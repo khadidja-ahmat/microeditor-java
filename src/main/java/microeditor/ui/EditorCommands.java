@@ -27,6 +27,9 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 
+/**
+ * Application service that translates UI actions into undoable model commands.
+ */
 final class EditorCommands {
     private final FigureFactory figureFactory;
     private final CommandManager commandManager;
@@ -38,6 +41,9 @@ final class EditorCommands {
     private ToolPaletteView toolPaletteView;
     private Supplier<Color> selectedColorSupplier = () -> Color.web("#4A90E2");
 
+    /**
+     * Creates the editor command facade.
+     */
     EditorCommands(
             FigureFactory figureFactory,
             CommandManager commandManager,

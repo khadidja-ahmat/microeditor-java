@@ -5,9 +5,17 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Command composed of several commands executed as one undoable operation.
+ */
 public final class CompositeCommand implements Command {
     private final List<Command> commands;
 
+    /**
+     * Creates a composite command.
+     *
+     * @param commands commands to execute in order
+     */
     public CompositeCommand(List<Command> commands) {
         Objects.requireNonNull(commands);
         if (commands.isEmpty()) {

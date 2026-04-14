@@ -15,14 +15,40 @@ public final class FigureFactory {
     private static final String RECTANGLE_ID_PREFIX = "rectangle";
     private static final String POLYGON_ID_PREFIX = "polygon";
 
+    /**
+     * Creates a rectangle with the default editor color.
+     *
+     * @param x horizontal position
+     * @param y vertical position
+     * @param width rectangle width
+     * @param height rectangle height
+     * @return new rectangle figure
+     */
     public RectangleFigure createRectangle(double x, double y, double width, double height) {
         return new RectangleFigure(newId(RECTANGLE_ID_PREFIX), x, y, width, height, DEFAULT_COLOR);
     }
 
+    /**
+     * Creates a regular polygon with the default editor color.
+     *
+     * @param x horizontal position
+     * @param y vertical position
+     * @param sideCount number of sides
+     * @param sideLength distance used to draw the polygon vertices
+     * @return new polygon figure
+     */
     public PolygonFigure createPolygon(double x, double y, int sideCount, double sideLength) {
         return new PolygonFigure(newId(POLYGON_ID_PREFIX), x, y, sideCount, sideLength, DEFAULT_COLOR);
     }
 
+    /**
+     * Creates a positioned copy of an existing figure.
+     *
+     * @param prototype source figure to clone
+     * @param x target horizontal position
+     * @param y target vertical position
+     * @return cloned figure at the requested position
+     */
     public Figure createFromPrototype(Figure prototype, double x, double y) {
         Figure clone = prototype.clone();
         clone.setPosition(x, y);

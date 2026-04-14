@@ -11,10 +11,16 @@ import javafx.scene.paint.Color;
 
 import java.util.Objects;
 
+/**
+ * Top action bar containing project, history, grouping, editing and color controls.
+ */
 final class ActionBarView {
     private final HBox pane;
     private final ColorPicker colorPicker = new ColorPicker(Color.web("#4A90E2"));
 
+    /**
+     * Creates the action bar and wires each button to its editor action.
+     */
     ActionBarView(
             Runnable saveAction,
             Runnable loadAction,
@@ -40,10 +46,20 @@ final class ActionBarView {
         pane.setStyle("-fx-background-color: #f3f3f3; -fx-border-color: #c7c7c7;");
     }
 
+    /**
+     * Returns the JavaFX container used by this view.
+     *
+     * @return action bar pane
+     */
     HBox getPane() {
         return pane;
     }
 
+    /**
+     * Returns the currently selected color.
+     *
+     * @return selected JavaFX color
+     */
     Color getSelectedColor() {
         return colorPicker.getValue();
     }

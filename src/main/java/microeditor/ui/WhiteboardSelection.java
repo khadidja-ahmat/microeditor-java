@@ -13,6 +13,9 @@ import microeditor.model.Selection;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * Handles click and rectangle selection on the whiteboard.
+ */
 final class WhiteboardSelection {
     private static final double SELECTION_DRAG_THRESHOLD = 4.0;
 
@@ -28,12 +31,24 @@ final class WhiteboardSelection {
     private Rectangle selectionRectangle;
     private boolean selectionRectangleFinished;
 
+    /**
+     * Creates whiteboard selection support.
+     *
+     * @param selection shared selection state
+     * @param figureNodes rendered nodes indexed by figure
+     * @param renderAction action used to refresh the whiteboard
+     */
     WhiteboardSelection(Selection selection, Map<Figure, Node> figureNodes, Runnable renderAction) {
         this.selection = Objects.requireNonNull(selection);
         this.figureNodes = Objects.requireNonNull(figureNodes);
         this.renderAction = Objects.requireNonNull(renderAction);
     }
 
+    /**
+     * Installs mouse selection handlers on a pane.
+     *
+     * @param whiteboardPane pane receiving mouse events
+     */
     void installOn(Pane whiteboardPane) {
         this.whiteboardPane = Objects.requireNonNull(whiteboardPane);
         whiteboardPane.setOnMouseClicked(event -> {
@@ -74,6 +89,9 @@ final class WhiteboardSelection {
         });
     }
 
+    /**
+     * Adds a single outline around a multi-selection.
+     */
     void addMultiSelectionOutline() {
         if (selection.getSelectedFigures().size() < 2) {
             return;

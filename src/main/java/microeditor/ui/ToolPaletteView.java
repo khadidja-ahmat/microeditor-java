@@ -22,6 +22,9 @@ import microeditor.model.Toolbar;
 import java.util.Objects;
 import java.util.function.IntConsumer;
 
+/**
+ * JavaFX view showing reusable figure templates and the trash zone.
+ */
 public final class ToolPaletteView {
     public static final String TOOL_PREFIX = "toolbar:";
     private static final double ICON_BOX_SIZE = 34.0;
@@ -33,6 +36,13 @@ public final class ToolPaletteView {
     private final ToolPaletteDragDrop dragDrop;
     private Toolbar toolbar;
 
+    /**
+     * Creates a tool palette view.
+     *
+     * @param toolbar toolbar model rendered by the palette
+     * @param deleteSelectionAction action triggered by the trash zone
+     * @param removeToolAction action triggered when a template is removed
+     */
     public ToolPaletteView(Toolbar toolbar, Runnable deleteSelectionAction, IntConsumer removeToolAction) {
         this.toolbar = Objects.requireNonNull(toolbar);
         Objects.requireNonNull(deleteSelectionAction);
@@ -50,25 +60,52 @@ public final class ToolPaletteView {
         render();
     }
 
+    /**
+     * Returns the JavaFX container used by this view.
+     *
+     * @return palette pane
+     */
     public VBox getPane() {
         return palettePane;
     }
 
+    /**
+     * Replaces the toolbar model rendered by this view.
+     *
+     * @param toolbar new toolbar model
+     */
     public void setToolbar(Toolbar toolbar) {
         this.toolbar = Objects.requireNonNull(toolbar);
         render();
     }
 
+    /**
+     * Checks whether a screen point is inside the palette.
+     *
+     * @param screenX screen X coordinate
+     * @param screenY screen Y coordinate
+     * @return {@code true} when the point is inside the palette
+     */
     public boolean containsScreenPoint(double screenX, double screenY) {
         Bounds screenBounds = palettePane.localToScreen(palettePane.getBoundsInLocal());
         return screenBounds != null && screenBounds.contains(screenX, screenY);
     }
 
+    /**
+     * Checks whether a screen point is inside the trash zone.
+     *
+     * @param screenX screen X coordinate
+     * @param screenY screen Y coordinate
+     * @return {@code true} when the point is inside the trash zone
+     */
     public boolean trashContainsScreenPoint(double screenX, double screenY) {
         Bounds screenBounds = trashPane.localToScreen(trashPane.getBoundsInLocal());
         return screenBounds != null && screenBounds.contains(screenX, screenY);
     }
 
+    /**
+     * Rebuilds the palette icons from the toolbar model.
+     */
     public void render() {
         toolsPane.getChildren().clear();
         for (int index = 0; index < toolbar.getFigures().size(); index++) {

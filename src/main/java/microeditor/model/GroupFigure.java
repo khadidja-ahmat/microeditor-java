@@ -4,12 +4,20 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Composite figure that applies movement and color changes to its children.
+ */
 public final class GroupFigure extends BaseFigure {
     private static final double DEFAULT_POSITION = 0.0;
     private static final String DEFAULT_GROUP_COLOR = "#000000";
 
     private final List<Figure> children = new ArrayList<>();
 
+    /**
+     * Creates an empty group.
+     *
+     * @param id unique group identifier
+     */
     public GroupFigure(String id) {
         super(id, DEFAULT_POSITION, DEFAULT_POSITION, DEFAULT_GROUP_COLOR);
     }
@@ -24,6 +32,11 @@ public final class GroupFigure extends BaseFigure {
         }
     }
 
+    /**
+     * Adds a child figure to the group.
+     *
+     * @param figure child figure to add
+     */
     public void addFigure(Figure figure) {
         if (!children.contains(figure)) {
             children.add(figure);
@@ -31,6 +44,11 @@ public final class GroupFigure extends BaseFigure {
         }
     }
 
+    /**
+     * Removes a child figure from the group.
+     *
+     * @param figure child figure to remove
+     */
     public void removeFigure(Figure figure) {
         if (children.remove(figure)) {
             notifyFigureChanged();
