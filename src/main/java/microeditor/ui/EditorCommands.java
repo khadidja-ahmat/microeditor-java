@@ -4,7 +4,9 @@ import javafx.scene.paint.Color;
 import microeditor.command.AddFigureCommand;
 import microeditor.command.AddToolbarFigureCommand;
 import microeditor.command.ChangeColorCommand;
+import microeditor.command.Command;
 import microeditor.command.CommandManager;
+import microeditor.command.CompositeCommand;
 import microeditor.command.EditFigureCommand;
 import microeditor.command.GroupFiguresCommand;
 import microeditor.command.MoveFigureCommand;
@@ -113,9 +115,9 @@ final class EditorCommands {
     }
 
     void moveSelectedFigures(double deltaX, double deltaY) {
-        for (Figure selectedFigure : selection.getSelectedFigures()) {
-            commandManager.executeCommand(new MoveFigureCommand(selectedFigure, deltaX, deltaY));
-        }
+        executeAsOneUserAction(selection.getSelectedFigures().stream()
+                .map(selectedFigure -> new MoveFigureCommand(selectedFigure, deltaX, deltaY))
+                .toList());
     }
 
     void groupSelectedFigures() {
@@ -161,17 +163,17 @@ final class EditorCommands {
 
     void changeSelectedColor() {
         String selectedColor = toHex(selectedColorSupplier.get());
-        for (Figure selectedFigure : selection.getSelectedFigures()) {
-            commandManager.executeCommand(new ChangeColorCommand(selectedFigure, selectedColor));
-        }
+        executeAsOneUserAction(selection.getSelectedFigures().stream()
+                .map(selectedFigure -> new ChangeColorCommand(selectedFigure, selectedColor))
+                .toList());
         whiteboardView.render();
     }
 
     void deleteSelectedFigures() {
         List<Figure> selectedFigures = List.copyOf(selection.getSelectedFigures());
-        for (Figure selectedFigure : selectedFigures) {
-            commandManager.executeCommand(new RemoveFigureCommand(document, selectedFigure));
-        }
+        executeAsOneUserAction(selectedFigures.stream()
+                .map(selectedFigure -> new RemoveFigureCommand(document, selectedFigure))
+                .toList());
         selection.clear();
         whiteboardView.render();
     }
@@ -218,6 +220,17 @@ final class EditorCommands {
             return null;
         }
         return selection.getSelectedFigures().iterator().next();
+    }
+
+    private void executeAsOneUserAction(List<? extends Command> commands) {
+        if (commands.isEmpty()) {
+            return;
+        }
+        if (commands.size() == 1) {
+            commandManager.executeCommand(commands.get(0));
+            return;
+        }
+        commandManager.executeCommand(new CompositeCommand(List.copyOf(commands)));
     }
 
     private String toHex(Color color) {

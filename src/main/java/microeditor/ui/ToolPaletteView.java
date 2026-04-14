@@ -134,40 +134,98 @@ public final class ToolPaletteView {
 
     private Node createGroupIcon(GroupFigure groupFigure) {
         Group groupIcon = new Group();
-        int childIndex = 0;
+        FigureBounds bounds = calculateGroupBounds(groupFigure);
+        if (bounds == null || bounds.width() == 0.0 || bounds.height() == 0.0) {
+            return createDefaultIcon(groupFigure);
+        }
+
+        double scale = ICON_MAX_SIZE / Math.max(bounds.width(), bounds.height());
         for (Figure child : groupFigure.getChildren()) {
-            if (childIndex == 3) {
-                break;
-            }
-            Node childIcon = createSmallChildIcon(child);
-            childIcon.setTranslateX(childIndex * 5.0);
-            childIcon.setTranslateY(childIndex * -4.0);
-            groupIcon.getChildren().add(childIcon);
-            childIndex++;
+            groupIcon.getChildren().add(createScaledFigureIcon(child, bounds.minX(), bounds.minY(), scale));
         }
         return groupIcon;
     }
 
-    private Node createSmallChildIcon(Figure figure) {
+    private Node createScaledFigureIcon(Figure figure, double minX, double minY, double scale) {
         if (figure instanceof RectangleFigure rectangleFigure) {
-            Rectangle rectangleIcon = new Rectangle(16, 10);
+            Rectangle rectangleIcon = new Rectangle(
+                    (rectangleFigure.getX() + rectangleFigure.getTranslateX() - minX) * scale,
+                    (rectangleFigure.getY() + rectangleFigure.getTranslateY() - minY) * scale,
+                    rectangleFigure.getWidth() * scale,
+                    rectangleFigure.getHeight() * scale);
+            rectangleIcon.setArcWidth(rectangleFigure.getCornerRadius() * scale);
+            rectangleIcon.setArcHeight(rectangleFigure.getCornerRadius() * scale);
             rectangleIcon.setFill(Color.web(rectangleFigure.getColor()));
             rectangleIcon.setStroke(Color.web("#34689f"));
             return rectangleIcon;
         }
         if (figure instanceof PolygonFigure polygonFigure) {
             Polygon polygonIcon = new Polygon();
-            double radius = 8.0;
+            double centerX = polygonFigure.getX() + polygonFigure.getTranslateX();
+            double centerY = polygonFigure.getY() + polygonFigure.getTranslateY();
+            double radius = polygonFigure.getSideLength();
             for (int sideIndex = 0; sideIndex < polygonFigure.getSideCount(); sideIndex++) {
                 double angle = -Math.PI / 2.0 + (2.0 * Math.PI * sideIndex / polygonFigure.getSideCount());
-                polygonIcon.getPoints().add(Math.cos(angle) * radius);
-                polygonIcon.getPoints().add(Math.sin(angle) * radius);
+                polygonIcon.getPoints().add((centerX + Math.cos(angle) * radius - minX) * scale);
+                polygonIcon.getPoints().add((centerY + Math.sin(angle) * radius - minY) * scale);
             }
             polygonIcon.setFill(Color.web(polygonFigure.getColor()));
             polygonIcon.setStroke(Color.web("#34689f"));
             return polygonIcon;
         }
+        if (figure instanceof GroupFigure nestedGroupFigure) {
+            Group nestedGroupIcon = new Group();
+            for (Figure child : nestedGroupFigure.getChildren()) {
+                nestedGroupIcon.getChildren().add(createScaledFigureIcon(child, minX, minY, scale));
+            }
+            return nestedGroupIcon;
+        }
         return createDefaultIcon(figure);
+    }
+
+    private FigureBounds calculateGroupBounds(GroupFigure groupFigure) {
+        FigureBounds bounds = null;
+        for (Figure child : groupFigure.getChildren()) {
+            FigureBounds childBounds = calculateFigureBounds(child);
+            bounds = bounds == null ? childBounds : bounds.union(childBounds);
+        }
+        return bounds;
+    }
+
+    private FigureBounds calculateFigureBounds(Figure figure) {
+        if (figure instanceof RectangleFigure rectangleFigure) {
+            double minX = rectangleFigure.getX() + rectangleFigure.getTranslateX();
+            double minY = rectangleFigure.getY() + rectangleFigure.getTranslateY();
+            return new FigureBounds(minX, minY, minX + rectangleFigure.getWidth(), minY + rectangleFigure.getHeight());
+        }
+        if (figure instanceof PolygonFigure polygonFigure) {
+            double minX = Double.POSITIVE_INFINITY;
+            double minY = Double.POSITIVE_INFINITY;
+            double maxX = Double.NEGATIVE_INFINITY;
+            double maxY = Double.NEGATIVE_INFINITY;
+            double centerX = polygonFigure.getX() + polygonFigure.getTranslateX();
+            double centerY = polygonFigure.getY() + polygonFigure.getTranslateY();
+            double radius = polygonFigure.getSideLength();
+
+            for (int sideIndex = 0; sideIndex < polygonFigure.getSideCount(); sideIndex++) {
+                double angle = -Math.PI / 2.0 + (2.0 * Math.PI * sideIndex / polygonFigure.getSideCount());
+                double x = centerX + Math.cos(angle) * radius;
+                double y = centerY + Math.sin(angle) * radius;
+                minX = Math.min(minX, x);
+                minY = Math.min(minY, y);
+                maxX = Math.max(maxX, x);
+                maxY = Math.max(maxY, y);
+            }
+            return new FigureBounds(minX, minY, maxX, maxY);
+        }
+        if (figure instanceof GroupFigure nestedGroupFigure) {
+            return calculateGroupBounds(nestedGroupFigure);
+        }
+        return new FigureBounds(
+                figure.getX() + figure.getTranslateX(),
+                figure.getY() + figure.getTranslateY(),
+                figure.getX() + figure.getTranslateX(),
+                figure.getY() + figure.getTranslateY());
     }
 
     private Node createDefaultIcon(Figure figure) {
@@ -191,5 +249,26 @@ public final class ToolPaletteView {
         trashIcon.setLayoutY(8);
         trashPane.getChildren().add(trashIcon);
         return trashPane;
+    }
+
+    private record FigureBounds(double minX, double minY, double maxX, double maxY) {
+        double width() {
+            return maxX - minX;
+        }
+
+        double height() {
+            return maxY - minY;
+        }
+
+        FigureBounds union(FigureBounds other) {
+            if (other == null) {
+                return this;
+            }
+            return new FigureBounds(
+                    Math.min(minX, other.minX),
+                    Math.min(minY, other.minY),
+                    Math.max(maxX, other.maxX),
+                    Math.max(maxY, other.maxY));
+        }
     }
 }

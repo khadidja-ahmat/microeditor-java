@@ -14,6 +14,16 @@ public final class GroupFigure extends BaseFigure {
         super(id, DEFAULT_POSITION, DEFAULT_POSITION, DEFAULT_GROUP_COLOR);
     }
 
+    @Override
+    public void setPosition(double positionX, double positionY) {
+        double deltaX = positionX - getX();
+        double deltaY = positionY - getY();
+        super.setPosition(positionX, positionY);
+        for (Figure child : children) {
+            child.move(deltaX, deltaY);
+        }
+    }
+
     public void addFigure(Figure figure) {
         if (!children.contains(figure)) {
             children.add(figure);

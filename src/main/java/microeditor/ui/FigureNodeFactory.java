@@ -6,6 +6,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
+import javafx.scene.transform.Rotate;
 import microeditor.model.Figure;
 import microeditor.model.GroupFigure;
 import microeditor.model.PolygonFigure;
@@ -46,6 +47,7 @@ final class FigureNodeFactory {
         for (Figure child : groupFigure.getChildren()) {
             groupNode.getChildren().add(createFigureNode(child, false, groupHighlighted));
         }
+        applyRotation(groupNode, groupFigure);
         if (interactive) {
             figureNodeHandler.install(groupNode, groupFigure);
         }
@@ -83,9 +85,16 @@ final class FigureNodeFactory {
         shape.setFill(Color.web(figure.getColor()));
         shape.setTranslateX(figure.getTranslateX());
         shape.setTranslateY(figure.getTranslateY());
-        shape.setRotate(figure.getRotation());
+        applyRotation(shape, figure);
         shape.setStroke(selected ? Color.BLACK : Color.web("#555555"));
         shape.setStrokeWidth(selected ? 3.0 : 1.0);
+    }
+
+    private void applyRotation(Node node, Figure figure) {
+        node.getTransforms().add(new Rotate(
+                figure.getRotation(),
+                figure.getRotationCenterX(),
+                figure.getRotationCenterY()));
     }
 
     @FunctionalInterface

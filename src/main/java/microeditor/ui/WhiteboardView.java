@@ -95,7 +95,6 @@ public final class WhiteboardView {
             figureNodes.put(figure, figureNode);
             whiteboardPane.getChildren().add(figureNode);
         }
-        whiteboardSelection.addMultiSelectionOutline();
     }
 
     private void configureWhiteboardPane() {

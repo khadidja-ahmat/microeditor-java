@@ -14,6 +14,8 @@ import java.util.Map;
 import java.util.Objects;
 
 final class WhiteboardSelection {
+    private static final double SELECTION_DRAG_THRESHOLD = 4.0;
+
     private final Selection selection;
     private final Map<Figure, Node> figureNodes;
     private final Runnable renderAction;
@@ -21,6 +23,8 @@ final class WhiteboardSelection {
     private Pane whiteboardPane;
     private double selectionStartX;
     private double selectionStartY;
+    private boolean selectionDragArmed;
+    private boolean keepCurrentSelection;
     private Rectangle selectionRectangle;
     private boolean selectionRectangleFinished;
 
@@ -38,31 +42,35 @@ final class WhiteboardSelection {
                 event.consume();
                 return;
             }
-            if (event.getButton() == MouseButton.PRIMARY) {
+            if (event.getButton() == MouseButton.PRIMARY && event.getTarget() == whiteboardPane) {
                 selection.clear();
                 renderAction.run();
             }
         });
         whiteboardPane.setOnMousePressed(event -> {
             if (event.getButton() == MouseButton.PRIMARY && event.getTarget() == whiteboardPane) {
-                startSelectionRectangle(event.getX(), event.getY(), event.isControlDown());
+                armSelectionRectangle(event.getX(), event.getY(), event.isControlDown());
                 event.consume();
             }
         });
         whiteboardPane.setOnMouseDragged(event -> {
+            if (selectionDragArmed && selectionRectangle == null && hasDraggedEnough(event.getX(), event.getY())) {
+                startSelectionRectangle();
+            }
             if (selectionRectangle != null) {
                 updateSelectionRectangle(event.getX(), event.getY());
                 event.consume();
             }
         });
         whiteboardPane.setOnMouseReleased(event -> {
-            if (selectionRectangle != null) {
+            if (selectionDragArmed && selectionRectangle != null) {
                 selectFiguresInsideRectangle();
                 selectionRectangle = null;
                 selectionRectangleFinished = true;
                 renderAction.run();
                 event.consume();
             }
+            selectionDragArmed = false;
         });
     }
 
@@ -86,15 +94,25 @@ final class WhiteboardSelection {
         }
     }
 
-    private void startSelectionRectangle(double x, double y, boolean keepCurrentSelection) {
+    private void armSelectionRectangle(double x, double y, boolean keepCurrentSelection) {
         selectionStartX = x;
         selectionStartY = y;
+        selectionDragArmed = true;
+        this.keepCurrentSelection = keepCurrentSelection;
+    }
+
+    private void startSelectionRectangle() {
         if (!keepCurrentSelection) {
             selection.clear();
         }
 
-        selectionRectangle = createSelectionRectangle(x, y, 0, 0);
+        selectionRectangle = createSelectionRectangle(selectionStartX, selectionStartY, 0, 0);
         whiteboardPane.getChildren().add(selectionRectangle);
+    }
+
+    private boolean hasDraggedEnough(double x, double y) {
+        return Math.abs(x - selectionStartX) >= SELECTION_DRAG_THRESHOLD
+                || Math.abs(y - selectionStartY) >= SELECTION_DRAG_THRESHOLD;
     }
 
     private void updateSelectionRectangle(double x, double y) {
