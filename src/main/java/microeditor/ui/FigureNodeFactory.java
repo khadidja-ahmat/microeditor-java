@@ -60,7 +60,7 @@ final class FigureNodeFactory {
         Group groupNode = new Group();
         boolean groupHighlighted = highlighted || selection.isSelected(groupFigure);
         for (Figure child : groupFigure.getChildren()) {
-            groupNode.getChildren().add(createFigureNode(child, false, groupHighlighted));
+            groupNode.getChildren().add(createFigureNode(child, child instanceof GroupFigure, groupHighlighted));
         }
         applyRotation(groupNode, groupFigure);
         if (interactive) {

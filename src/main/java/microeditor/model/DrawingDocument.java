@@ -14,7 +14,7 @@ import java.util.List;
  * Logical content of the whiteboard.
  * It contains the figures of the current drawing, not the JavaFX view.
  */
-public final class DrawingDocument implements Serializable, ObservableModel {
+public final class DrawingDocument implements Serializable, ObservableModel, FigureContainer {
     private transient ObservableSupport observableSupport = new ObservableSupport(this);
     private final List<Figure> figures = new ArrayList<>();
 
@@ -23,6 +23,7 @@ public final class DrawingDocument implements Serializable, ObservableModel {
      *
      * @param figure figure to add
      */
+    @Override
     public void addFigure(Figure figure) {
         if (!figures.contains(figure)) {
             figures.add(figure);
@@ -36,6 +37,7 @@ public final class DrawingDocument implements Serializable, ObservableModel {
      * @param index desired insertion index
      * @param figure figure to add
      */
+    @Override
     public void addFigure(int index, Figure figure) {
         if (!figures.contains(figure)) {
             int insertionIndex = Math.max(0, Math.min(index, figures.size()));
@@ -49,6 +51,7 @@ public final class DrawingDocument implements Serializable, ObservableModel {
      *
      * @param figure figure to remove
      */
+    @Override
     public void removeFigure(Figure figure) {
         if (figures.remove(figure)) {
             notifyObservers(ModelChangeType.FIGURE_REMOVED, figure);
@@ -70,6 +73,7 @@ public final class DrawingDocument implements Serializable, ObservableModel {
      *
      * @return unmodifiable list of figures
      */
+    @Override
     public List<Figure> getFigures() {
         return Collections.unmodifiableList(figures);
     }
@@ -80,6 +84,7 @@ public final class DrawingDocument implements Serializable, ObservableModel {
      * @param figure searched figure
      * @return index of the figure, or {@code -1} when absent
      */
+    @Override
     public int indexOf(Figure figure) {
         return figures.indexOf(figure);
     }

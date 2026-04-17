@@ -220,6 +220,34 @@ class CommandManagerTest {
     }
 
     @Test
+    void nestedGroupIsUngroupedIntoItsParentGroup() {
+        DrawingDocument document = new DrawingDocument();
+        Figure first = new RectangleFigure("rectangle-1", 0, 0, 100, 50, "#000000");
+        Figure second = new PolygonFigure("polygon-1", 40, 40, 5, 30, "#111111");
+        Figure third = new RectangleFigure("rectangle-2", 120, 0, 80, 40, "#222222");
+        GroupFigure parentGroup = new GroupFigure("group-parent");
+        GroupFigure nestedGroup = new GroupFigure("group-nested");
+        CommandManager manager = new CommandManager();
+        nestedGroup.addFigure(second);
+        nestedGroup.addFigure(third);
+        parentGroup.addFigure(first);
+        parentGroup.addFigure(nestedGroup);
+        document.addFigure(parentGroup);
+
+        manager.executeCommand(new UngroupFigureCommand(parentGroup, nestedGroup));
+
+        assertEquals(List.of(parentGroup), document.getFigures());
+        assertEquals(List.of(first, second, third), parentGroup.getChildren());
+        assertTrue(nestedGroup.getChildren().isEmpty());
+
+        manager.undo();
+
+        assertEquals(List.of(parentGroup), document.getFigures());
+        assertEquals(List.of(first, nestedGroup), parentGroup.getChildren());
+        assertEquals(List.of(second, third), nestedGroup.getChildren());
+    }
+
+    @Test
     void addToolbarFigureCanBeUndoneAndRedone() {
         Toolbar toolbar = new Toolbar();
         Figure rectangle = new RectangleFigure("rectangle-1", 0, 0, 100, 50, "#000000");

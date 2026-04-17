@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * Composite figure that applies movement and color changes to its children.
  */
-public final class GroupFigure extends BaseFigure {
+public final class GroupFigure extends BaseFigure implements FigureContainer {
     private static final double DEFAULT_POSITION = 0.0;
     private static final String DEFAULT_GROUP_COLOR = "#000000";
 
@@ -37,9 +37,19 @@ public final class GroupFigure extends BaseFigure {
      *
      * @param figure child figure to add
      */
+    @Override
     public void addFigure(Figure figure) {
         if (!children.contains(figure)) {
             children.add(figure);
+            notifyFigureChanged();
+        }
+    }
+
+    @Override
+    public void addFigure(int index, Figure figure) {
+        if (!children.contains(figure)) {
+            int insertionIndex = Math.max(0, Math.min(index, children.size()));
+            children.add(insertionIndex, figure);
             notifyFigureChanged();
         }
     }
@@ -49,10 +59,16 @@ public final class GroupFigure extends BaseFigure {
      *
      * @param figure child figure to remove
      */
+    @Override
     public void removeFigure(Figure figure) {
         if (children.remove(figure)) {
             notifyFigureChanged();
         }
+    }
+
+    @Override
+    public int indexOf(Figure figure) {
+        return children.indexOf(figure);
     }
 
     @Override
@@ -106,5 +122,10 @@ public final class GroupFigure extends BaseFigure {
     @Override
     public List<Figure> getChildren() {
         return Collections.unmodifiableList(children);
+    }
+
+    @Override
+    public List<Figure> getFigures() {
+        return getChildren();
     }
 }

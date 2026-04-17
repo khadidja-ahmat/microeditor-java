@@ -16,6 +16,7 @@ import microeditor.command.UngroupFigureCommand;
 import microeditor.factory.FigureFactory;
 import microeditor.model.DrawingDocument;
 import microeditor.model.Figure;
+import microeditor.model.FigureContainer;
 import microeditor.model.FigureState;
 import microeditor.model.GroupFigure;
 import microeditor.model.Selection;
@@ -121,7 +122,7 @@ final class EditorCommands {
     }
 
     void moveSelectedFigures(double deltaX, double deltaY) {
-        executeAsOneUserAction(selection.getSelectedFigures().stream()
+        executeAsOneUserAction(getTopLevelSelectedFigures().stream()
                 .map(selectedFigure -> new MoveFigureCommand(selectedFigure, deltaX, deltaY))
                 .toList());
     }
@@ -145,7 +146,12 @@ final class EditorCommands {
             return;
         }
 
-        commandManager.executeCommand(new UngroupFigureCommand(document, group));
+        Optional<FigureContainer> parent = findParentContainer(group);
+        if (parent.isEmpty()) {
+            return;
+        }
+
+        commandManager.executeCommand(new UngroupFigureCommand(parent.get(), group));
         selection.clear();
         whiteboardView.render();
     }
@@ -169,14 +175,14 @@ final class EditorCommands {
 
     void changeSelectedColor() {
         String selectedColor = toHex(selectedColorSupplier.get());
-        executeAsOneUserAction(selection.getSelectedFigures().stream()
+        executeAsOneUserAction(getTopLevelSelectedFigures().stream()
                 .map(selectedFigure -> new ChangeColorCommand(selectedFigure, selectedColor))
                 .toList());
         whiteboardView.render();
     }
 
     void deleteSelectedFigures() {
-        List<Figure> selectedFigures = List.copyOf(selection.getSelectedFigures());
+        List<Figure> selectedFigures = getTopLevelSelectedFigures();
         executeAsOneUserAction(selectedFigures.stream()
                 .map(selectedFigure -> new RemoveFigureCommand(document, selectedFigure))
                 .toList());
@@ -226,6 +232,57 @@ final class EditorCommands {
             return null;
         }
         return selection.getSelectedFigures().iterator().next();
+    }
+
+    private List<Figure> getTopLevelSelectedFigures() {
+        List<Figure> selectedFigures = List.copyOf(selection.getSelectedFigures());
+        return selectedFigures.stream()
+                .filter(selectedFigure -> selectedFigures.stream()
+                        .noneMatch(otherFigure -> otherFigure != selectedFigure
+                                && containsDescendant(otherFigure, selectedFigure)))
+                .toList();
+    }
+
+    private boolean containsDescendant(Figure possibleAncestor, Figure searchedFigure) {
+        if (!(possibleAncestor instanceof GroupFigure group)) {
+            return false;
+        }
+        for (Figure child : group.getChildren()) {
+            if (child == searchedFigure || containsDescendant(child, searchedFigure)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Optional<FigureContainer> findParentContainer(GroupFigure searchedGroup) {
+        for (Figure figure : document.getFigures()) {
+            if (figure == searchedGroup) {
+                return Optional.of(document);
+            }
+            if (figure instanceof GroupFigure group) {
+                Optional<FigureContainer> parent = findParentContainer(group, searchedGroup);
+                if (parent.isPresent()) {
+                    return parent;
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    private Optional<FigureContainer> findParentContainer(GroupFigure parentGroup, GroupFigure searchedGroup) {
+        for (Figure child : parentGroup.getChildren()) {
+            if (child == searchedGroup) {
+                return Optional.of(parentGroup);
+            }
+            if (child instanceof GroupFigure childGroup) {
+                Optional<FigureContainer> parent = findParentContainer(childGroup, searchedGroup);
+                if (parent.isPresent()) {
+                    return parent;
+                }
+            }
+        }
+        return Optional.empty();
     }
 
     private void executeAsOneUserAction(List<? extends Command> commands) {

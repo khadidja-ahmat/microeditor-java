@@ -35,6 +35,7 @@ public final class WhiteboardView {
     private Runnable deleteAction = () -> { };
     private double mousePressedSceneX;
     private double mousePressedSceneY;
+    private Figure draggedFigure;
 
     /**
      * Creates a whiteboard view bound to a document and a selection model.
@@ -178,15 +179,17 @@ public final class WhiteboardView {
             if (event.getButton() == MouseButton.PRIMARY) {
                 mousePressedSceneX = event.getSceneX();
                 mousePressedSceneY = event.getSceneY();
-                updateSelection(figure, event.isControlDown());
+                draggedFigure = selectFigureForInteraction(figure, event.isControlDown());
                 event.consume();
             }
         });
 
         figureNode.setOnMouseReleased(event -> {
             if (event.getButton() == MouseButton.PRIMARY) {
-                dragDrop.finishFigureDrag(figure, event.getScreenX(), event.getScreenY(),
+                Figure figureToDrag = draggedFigure == null ? figure : draggedFigure;
+                dragDrop.finishFigureDrag(figureToDrag, event.getScreenX(), event.getScreenY(),
                         event.getSceneX(), event.getSceneY(), mousePressedSceneX, mousePressedSceneY);
+                draggedFigure = null;
                 event.consume();
             }
         });
@@ -211,12 +214,44 @@ public final class WhiteboardView {
         }
     }
 
+    private Figure selectFigureForInteraction(Figure figure, boolean controlKeyPressed) {
+        if (!controlKeyPressed) {
+            Figure selectedAncestor = findSelectedAncestor(figure);
+            if (selectedAncestor != null) {
+                return selectedAncestor;
+            }
+        }
+        updateSelection(figure, controlKeyPressed);
+        return figure;
+    }
+
     private void toggleSelection(Figure figure) {
         if (selection.isSelected(figure)) {
             selection.unselect(figure);
         } else {
             selection.select(figure);
         }
+    }
+
+    private Figure findSelectedAncestor(Figure figure) {
+        for (Figure selectedFigure : selection.getSelectedFigures()) {
+            if (selectedFigure != figure && containsDescendant(selectedFigure, figure)) {
+                return selectedFigure;
+            }
+        }
+        return null;
+    }
+
+    private boolean containsDescendant(Figure possibleAncestor, Figure searchedFigure) {
+        if (!(possibleAncestor instanceof GroupFigure group)) {
+            return false;
+        }
+        for (Figure child : group.getChildren()) {
+            if (child == searchedFigure || containsDescendant(child, searchedFigure)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private ContextMenu createContextMenu() {

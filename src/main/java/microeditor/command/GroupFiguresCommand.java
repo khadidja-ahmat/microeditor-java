@@ -2,6 +2,7 @@ package microeditor.command;
 
 import microeditor.model.DrawingDocument;
 import microeditor.model.Figure;
+import microeditor.model.FigureContainer;
 import microeditor.model.GroupFigure;
 
 import java.util.ArrayList;
@@ -10,10 +11,10 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Command that replaces several document figures with a single group.
+ * Command that replaces several sibling figures with a single group.
  */
 public final class GroupFiguresCommand implements Command {
-    private final DrawingDocument document;
+    private final FigureContainer parent;
     private final GroupFigure group;
     private final List<Figure> figures;
     private final List<FigureWithIndex> originalFigures = new ArrayList<>();
@@ -27,7 +28,18 @@ public final class GroupFiguresCommand implements Command {
      * @param figures figures to group, in document order or selection order
      */
     public GroupFiguresCommand(DrawingDocument document, GroupFigure group, List<Figure> figures) {
-        this.document = Objects.requireNonNull(document);
+        this((FigureContainer) document, group, figures);
+    }
+
+    /**
+     * Creates a grouping command.
+     *
+     * @param parent container containing the figures
+     * @param group group that will receive the figures
+     * @param figures sibling figures to group, in container order or selection order
+     */
+    public GroupFiguresCommand(FigureContainer parent, GroupFigure group, List<Figure> figures) {
+        this.parent = Objects.requireNonNull(parent);
         this.group = Objects.requireNonNull(group);
         this.figures = List.copyOf(Objects.requireNonNull(figures));
         if (this.figures.size() < 2) {
@@ -42,9 +54,9 @@ public final class GroupFiguresCommand implements Command {
 
         List<FigureWithIndex> orderedFigures = new ArrayList<>();
         for (Figure figure : figures) {
-            int index = document.indexOf(figure);
+            int index = parent.indexOf(figure);
             if (index < 0) {
-                throw new IllegalStateException("Cannot group a figure that is not in the document.");
+                throw new IllegalStateException("Cannot group a figure that is not in the parent container.");
             }
             groupIndex = Math.min(groupIndex, index);
             orderedFigures.add(new FigureWithIndex(figure, index));
@@ -56,17 +68,17 @@ public final class GroupFiguresCommand implements Command {
             group.addFigure(item.figure());
         }
         for (FigureWithIndex item : orderedFigures) {
-            document.removeFigure(item.figure());
+            parent.removeFigure(item.figure());
         }
-        document.addFigure(groupIndex, group);
+        parent.addFigure(groupIndex, group);
     }
 
     @Override
     public void undo() {
-        document.removeFigure(group);
+        parent.removeFigure(group);
         for (FigureWithIndex item : originalFigures) {
             group.removeFigure(item.figure());
-            document.addFigure(item.index(), item.figure());
+            parent.addFigure(item.index(), item.figure());
         }
     }
 
