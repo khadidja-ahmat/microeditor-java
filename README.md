@@ -325,4 +325,3 @@ Scenario simple pour presenter le projet :
 ## Auteurs
 
 - Khadidja AHMAT HASSAN
-- Djenaba Barry
