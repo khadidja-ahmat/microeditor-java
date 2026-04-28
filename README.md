@@ -295,8 +295,6 @@ Ils verifient notamment :
 - undo apres suppression ;
 - undo/redo apres deplacement ;
 - undo apres edition ;
-- undo apres groupage ;
-- undo apres degroupage ;
 - degroupage d'un sous-groupe dans son groupe parent ;
 - ajout et suppression dans la toolbar ;
 - sauvegarde et chargement.
